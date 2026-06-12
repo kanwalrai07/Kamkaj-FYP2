@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "1084398802536",
+    "firebase_url": "https://kamkaj-d64b5-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "kamkaj-d64b5",
+    "storage_bucket": "kamkaj-d64b5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1084398802536:android:c18185c657414addad0ddd",
+        "android_client_info": {
+          "package_name": "com.example.kamkaj"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAT0PTLaf8sADjNiTCfxR2v6qDFDB4R9n0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
