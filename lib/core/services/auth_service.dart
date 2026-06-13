@@ -159,30 +159,15 @@ class AuthService {
   Future<void> approveWorker(String uid) async {
     debugPrint('Approving worker with UID: $uid');
     try {
-      final docRef = _firestore.collection('users').doc(uid);
-      final docSnapshot = await docRef.get();
-      
-      debugPrint('Document exists: ${docSnapshot.exists}');
-      
-      if (docSnapshot.exists) {
-        await docRef.update({
-          'is_approved': true,
-          'rating': 5.0,
-          'review_count': 0,
-        });
-        debugPrint('Successfully updated worker document');
-      } else {
-        // If document doesn't exist, create it with basic info
-        await docRef.set({
-          'uid': uid,
-          'role': 'worker',
-          'is_approved': true,
-          'rating': 5.0,
-          'review_count': 0,
-          'created_at': FieldValue.serverTimestamp(),
-        });
-        debugPrint('Successfully created worker document');
-      }
+      // Fast: set with merge - creates if doesn't exist, updates if does
+      await _firestore.collection('users').doc(uid).set({
+        'is_approved': true,
+        'rating': 5.0,
+        'review_count': 0,
+        'uid': uid,
+        'role': 'worker',
+      }, SetOptions(merge: true));
+      debugPrint('Successfully approved worker');
     } catch (e) {
       debugPrint('Error in approveWorker: $e');
       rethrow;
@@ -193,17 +178,9 @@ class AuthService {
   Future<void> rejectWorker(String uid) async {
     debugPrint('Rejecting worker with UID: $uid');
     try {
-      final docRef = _firestore.collection('users').doc(uid);
-      final docSnapshot = await docRef.get();
-      
-      debugPrint('Document exists: ${docSnapshot.exists}');
-      
-      if (docSnapshot.exists) {
-        await docRef.delete();
-        debugPrint('Successfully deleted worker document');
-      } else {
-        debugPrint('Worker document not found, nothing to delete');
-      }
+      // Fast: just delete, no need to check if exists first
+      await _firestore.collection('users').doc(uid).delete();
+      debugPrint('Successfully rejected worker');
     } catch (e) {
       debugPrint('Error in rejectWorker: $e');
       rethrow;

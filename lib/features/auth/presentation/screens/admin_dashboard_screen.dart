@@ -202,13 +202,7 @@ class _WorkerListState extends ConsumerState<_WorkerList> {
                                             debugPrint('REJECT button pressed for workerId: $workerId');
                                             setState(() => _processingWorkerId = workerId);
                                             try {
-                                              // Try backend first, but if it fails, still update Firestore
-                                              try {
-                                                await ref.read(adminServiceProvider).verifyWorker(workerId, 'rejected', reason: 'Identity verification failed');
-                                              } catch (e) {
-                                                debugPrint('Backend call failed, but proceeding with Firestore update: $e');
-                                              }
-                                              // Always update Firestore
+                                              // Fast: only Firestore call
                                               await ref.read(authServiceProvider).rejectWorker(workerId);
                                               if (mounted) {
                                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -253,13 +247,7 @@ class _WorkerListState extends ConsumerState<_WorkerList> {
                                             debugPrint('APPROVE button pressed for workerId: $workerId');
                                             setState(() => _processingWorkerId = workerId);
                                             try {
-                                              // Try backend first, but if it fails, still update Firestore
-                                              try {
-                                                await ref.read(adminServiceProvider).verifyWorker(workerId, 'approved');
-                                              } catch (e) {
-                                                debugPrint('Backend call failed, but proceeding with Firestore update: $e');
-                                              }
-                                              // Always update Firestore
+                                              // Fast: only Firestore call
                                               await ref.read(authServiceProvider).approveWorker(workerId);
                                               if (mounted) {
                                                 ScaffoldMessenger.of(context).showSnackBar(
