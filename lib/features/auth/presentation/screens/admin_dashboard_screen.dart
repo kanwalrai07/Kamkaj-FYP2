@@ -70,20 +70,24 @@ class AdminDashboardScreen extends ConsumerWidget {
   }
 }
 
-class _WorkerList extends ConsumerWidget {
+class _WorkerList extends ConsumerStatefulWidget {
   final bool isPending;
   const _WorkerList({required this.isPending});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // If it's pending, we also want to show data from our new Node.js + Supabase backend
-    // to fulfill the checklist requirement for the new tech stack.
-    
+  ConsumerState<_WorkerList> createState() => _WorkerListState();
+}
+
+class _WorkerListState extends ConsumerState<_WorkerList> {
+  String? _processingWorkerId;
+
+  @override
+  Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('users')
           .where('role', isEqualTo: 'worker')
-          .where('is_approved', isEqualTo: !isPending)
+          .where('is_approved', isEqualTo: !widget.isPending)
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -98,7 +102,7 @@ class _WorkerList extends ConsumerWidget {
                 Icon(Icons.people_outline_rounded, size: 64, color: AppColors.grey.withValues(alpha: 0.3)),
                 const SizedBox(height: 16),
                 Text(
-                  isPending ? 'No pending registrations' : 'No approved workers yet',
+                  widget.isPending ? 'No pending registrations' : 'No approved workers yet',
                   style: const TextStyle(color: AppColors.grey, fontSize: 16, fontWeight: FontWeight.w500),
                 ),
               ],
@@ -112,6 +116,7 @@ class _WorkerList extends ConsumerWidget {
           itemBuilder: (context, index) {
             final worker = workers[index].data() as Map<String, dynamic>;
             final workerId = workers[index].id;
+            final isProcessing = _processingWorkerId == workerId;
 
             return Container(
               margin: const EdgeInsets.only(bottom: 20),
@@ -185,36 +190,68 @@ class _WorkerList extends ConsumerWidget {
                               ),
                             ],
                           ),
-                          if (isPending) ...[
+                          if (widget.isPending) ...[
                             const SizedBox(height: 32),
                             Row(
                               children: [
                                 Expanded(
                                   child: OutlinedButton(
-                                    onPressed: () async {
-                                      final success = await ref.read(adminServiceProvider).verifyWorker(workerId, 'rejected', reason: 'Identity verification failed');
-                                      if (success) {
-                                        await ref.read(authServiceProvider).rejectWorker(workerId);
-                                      }
-                                    },
+                                    onPressed: isProcessing
+                                        ? null
+                                        : () async {
+                                            setState(() => _processingWorkerId = workerId);
+                                            try {
+                                              // Try backend first, but if it fails, still update Firestore
+                                              await ref.read(adminServiceProvider).verifyWorker(workerId, 'rejected', reason: 'Identity verification failed');
+                                            } catch (e) {
+                                              debugPrint('Backend call failed, but proceeding with Firestore update: $e');
+                                            }
+                                            // Always update Firestore
+                                            await ref.read(authServiceProvider).rejectWorker(workerId);
+                                            if (mounted) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(content: Text('Worker rejected successfully')),
+                                              );
+                                            }
+                                            setState(() => _processingWorkerId = null);
+                                          },
                                     style: OutlinedButton.styleFrom(
                                       foregroundColor: Colors.red,
                                       side: const BorderSide(color: Colors.red),
                                       minimumSize: const Size(0, 52),
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                     ),
-                                    child: const Text('REJECT', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1)),
+                                    child: isProcessing
+                                        ? const SizedBox(
+                                            height: 20,
+                                            width: 20,
+                                            child: CircularProgressIndicator(color: Colors.red, strokeWidth: 2),
+                                          )
+                                        : const Text('REJECT', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1)),
                                   ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: ElevatedButton(
-                                    onPressed: () async {
-                                      final success = await ref.read(adminServiceProvider).verifyWorker(workerId, 'approved');
-                                      if (success) {
-                                        await ref.read(authServiceProvider).approveWorker(workerId);
-                                      }
-                                    },
+                                    onPressed: isProcessing
+                                        ? null
+                                        : () async {
+                                            setState(() => _processingWorkerId = workerId);
+                                            try {
+                                              // Try backend first, but if it fails, still update Firestore
+                                              await ref.read(adminServiceProvider).verifyWorker(workerId, 'approved');
+                                            } catch (e) {
+                                              debugPrint('Backend call failed, but proceeding with Firestore update: $e');
+                                            }
+                                            // Always update Firestore
+                                            await ref.read(authServiceProvider).approveWorker(workerId);
+                                            if (mounted) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(content: Text('Worker approved successfully')),
+                                              );
+                                            }
+                                            setState(() => _processingWorkerId = null);
+                                          },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.green,
                                       foregroundColor: Colors.white,
@@ -222,7 +259,13 @@ class _WorkerList extends ConsumerWidget {
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                       elevation: 0,
                                     ),
-                                    child: const Text('APPROVE', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1)),
+                                    child: isProcessing
+                                        ? const SizedBox(
+                                            height: 20,
+                                            width: 20,
+                                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                          )
+                                        : const Text('APPROVE', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1)),
                                   ),
                                 ),
                               ],
