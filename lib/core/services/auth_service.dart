@@ -20,10 +20,15 @@ class AuthService {
     try {
       final token = await _fcm.getToken();
       if (token != null) {
-        await _firestore.collection('users').doc(uid).update({
-          'fcm_token': token,
-          'last_token_update': FieldValue.serverTimestamp(),
-        });
+        final docRef = _firestore.collection('users').doc(uid);
+        final docSnapshot = await docRef.get();
+        
+        if (docSnapshot.exists) {
+          await docRef.update({
+            'fcm_token': token,
+            'last_token_update': FieldValue.serverTimestamp(),
+          });
+        }
       }
     } catch (e) {
       debugPrint('Error updating FCM token: $e');
@@ -152,16 +157,37 @@ class AuthService {
 
   // Approve a worker
   Future<void> approveWorker(String uid) async {
-    await _firestore.collection('users').doc(uid).update({
-      'is_approved': true,
-      'rating': 5.0,
-      'review_count': 0,
-    });
+    final docRef = _firestore.collection('users').doc(uid);
+    final docSnapshot = await docRef.get();
+    
+    if (docSnapshot.exists) {
+      await docRef.update({
+        'is_approved': true,
+        'rating': 5.0,
+        'review_count': 0,
+      });
+    } else {
+      // If document doesn't exist, create it with basic info
+      await docRef.set({
+        'uid': uid,
+        'role': 'worker',
+        'is_approved': true,
+        'rating': 5.0,
+        'review_count': 0,
+        'created_at': FieldValue.serverTimestamp(),
+      });
+    }
   }
 
   // Reject/Delete a worker (optional)
   Future<void> rejectWorker(String uid) async {
-    await _firestore.collection('users').doc(uid).delete();
+    final docRef = _firestore.collection('users').doc(uid);
+    final docSnapshot = await docRef.get();
+    
+    if (docSnapshot.exists) {
+      await docRef.delete();
+    }
+    // If document doesn't exist, do nothing
   }
 
   // Stream of pending workers for admin
