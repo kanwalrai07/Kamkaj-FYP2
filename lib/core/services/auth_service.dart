@@ -157,37 +157,57 @@ class AuthService {
 
   // Approve a worker
   Future<void> approveWorker(String uid) async {
-    final docRef = _firestore.collection('users').doc(uid);
-    final docSnapshot = await docRef.get();
-    
-    if (docSnapshot.exists) {
-      await docRef.update({
-        'is_approved': true,
-        'rating': 5.0,
-        'review_count': 0,
-      });
-    } else {
-      // If document doesn't exist, create it with basic info
-      await docRef.set({
-        'uid': uid,
-        'role': 'worker',
-        'is_approved': true,
-        'rating': 5.0,
-        'review_count': 0,
-        'created_at': FieldValue.serverTimestamp(),
-      });
+    debugPrint('Approving worker with UID: $uid');
+    try {
+      final docRef = _firestore.collection('users').doc(uid);
+      final docSnapshot = await docRef.get();
+      
+      debugPrint('Document exists: ${docSnapshot.exists}');
+      
+      if (docSnapshot.exists) {
+        await docRef.update({
+          'is_approved': true,
+          'rating': 5.0,
+          'review_count': 0,
+        });
+        debugPrint('Successfully updated worker document');
+      } else {
+        // If document doesn't exist, create it with basic info
+        await docRef.set({
+          'uid': uid,
+          'role': 'worker',
+          'is_approved': true,
+          'rating': 5.0,
+          'review_count': 0,
+          'created_at': FieldValue.serverTimestamp(),
+        });
+        debugPrint('Successfully created worker document');
+      }
+    } catch (e) {
+      debugPrint('Error in approveWorker: $e');
+      rethrow;
     }
   }
 
   // Reject/Delete a worker (optional)
   Future<void> rejectWorker(String uid) async {
-    final docRef = _firestore.collection('users').doc(uid);
-    final docSnapshot = await docRef.get();
-    
-    if (docSnapshot.exists) {
-      await docRef.delete();
+    debugPrint('Rejecting worker with UID: $uid');
+    try {
+      final docRef = _firestore.collection('users').doc(uid);
+      final docSnapshot = await docRef.get();
+      
+      debugPrint('Document exists: ${docSnapshot.exists}');
+      
+      if (docSnapshot.exists) {
+        await docRef.delete();
+        debugPrint('Successfully deleted worker document');
+      } else {
+        debugPrint('Worker document not found, nothing to delete');
+      }
+    } catch (e) {
+      debugPrint('Error in rejectWorker: $e');
+      rethrow;
     }
-    // If document doesn't exist, do nothing
   }
 
   // Stream of pending workers for admin

@@ -199,6 +199,7 @@ class _WorkerListState extends ConsumerState<_WorkerList> {
                                     onPressed: isProcessing
                                         ? null
                                         : () async {
+                                            debugPrint('REJECT button pressed for workerId: $workerId');
                                             setState(() => _processingWorkerId = workerId);
                                             try {
                                               // Try backend first, but if it fails, still update Firestore
@@ -215,12 +216,14 @@ class _WorkerListState extends ConsumerState<_WorkerList> {
                                                 );
                                               }
                                             } catch (e) {
+                                              debugPrint('Error in REJECT button: $e');
                                               if (mounted) {
                                                 ScaffoldMessenger.of(context).showSnackBar(
                                                   SnackBar(content: Text('Failed to reject worker: ${e.toString()}')),
                                                 );
                                               }
                                             } finally {
+                                              debugPrint('Finally block for REJECT: resetting loading state');
                                               if (mounted) {
                                                 setState(() => _processingWorkerId = null);
                                               }
@@ -247,6 +250,7 @@ class _WorkerListState extends ConsumerState<_WorkerList> {
                                     onPressed: isProcessing
                                         ? null
                                         : () async {
+                                            debugPrint('APPROVE button pressed for workerId: $workerId');
                                             setState(() => _processingWorkerId = workerId);
                                             try {
                                               // Try backend first, but if it fails, still update Firestore
@@ -263,12 +267,14 @@ class _WorkerListState extends ConsumerState<_WorkerList> {
                                                 );
                                               }
                                             } catch (e) {
+                                              debugPrint('Error in APPROVE button: $e');
                                               if (mounted) {
                                                 ScaffoldMessenger.of(context).showSnackBar(
                                                   SnackBar(content: Text('Failed to approve worker: ${e.toString()}')),
                                                 );
                                               }
                                             } finally {
+                                              debugPrint('Finally block for APPROVE: resetting loading state');
                                               if (mounted) {
                                                 setState(() => _processingWorkerId = null);
                                               }
