@@ -202,18 +202,29 @@ class _WorkerListState extends ConsumerState<_WorkerList> {
                                             setState(() => _processingWorkerId = workerId);
                                             try {
                                               // Try backend first, but if it fails, still update Firestore
-                                              await ref.read(adminServiceProvider).verifyWorker(workerId, 'rejected', reason: 'Identity verification failed');
+                                              try {
+                                                await ref.read(adminServiceProvider).verifyWorker(workerId, 'rejected', reason: 'Identity verification failed');
+                                              } catch (e) {
+                                                debugPrint('Backend call failed, but proceeding with Firestore update: $e');
+                                              }
+                                              // Always update Firestore
+                                              await ref.read(authServiceProvider).rejectWorker(workerId);
+                                              if (mounted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(content: Text('Worker rejected successfully')),
+                                                );
+                                              }
                                             } catch (e) {
-                                              debugPrint('Backend call failed, but proceeding with Firestore update: $e');
+                                              if (mounted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(content: Text('Failed to reject worker: ${e.toString()}')),
+                                                );
+                                              }
+                                            } finally {
+                                              if (mounted) {
+                                                setState(() => _processingWorkerId = null);
+                                              }
                                             }
-                                            // Always update Firestore
-                                            await ref.read(authServiceProvider).rejectWorker(workerId);
-                                            if (mounted) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(content: Text('Worker rejected successfully')),
-                                              );
-                                            }
-                                            setState(() => _processingWorkerId = null);
                                           },
                                     style: OutlinedButton.styleFrom(
                                       foregroundColor: Colors.red,
@@ -239,18 +250,29 @@ class _WorkerListState extends ConsumerState<_WorkerList> {
                                             setState(() => _processingWorkerId = workerId);
                                             try {
                                               // Try backend first, but if it fails, still update Firestore
-                                              await ref.read(adminServiceProvider).verifyWorker(workerId, 'approved');
+                                              try {
+                                                await ref.read(adminServiceProvider).verifyWorker(workerId, 'approved');
+                                              } catch (e) {
+                                                debugPrint('Backend call failed, but proceeding with Firestore update: $e');
+                                              }
+                                              // Always update Firestore
+                                              await ref.read(authServiceProvider).approveWorker(workerId);
+                                              if (mounted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(content: Text('Worker approved successfully')),
+                                                );
+                                              }
                                             } catch (e) {
-                                              debugPrint('Backend call failed, but proceeding with Firestore update: $e');
+                                              if (mounted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(content: Text('Failed to approve worker: ${e.toString()}')),
+                                                );
+                                              }
+                                            } finally {
+                                              if (mounted) {
+                                                setState(() => _processingWorkerId = null);
+                                              }
                                             }
-                                            // Always update Firestore
-                                            await ref.read(authServiceProvider).approveWorker(workerId);
-                                            if (mounted) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(content: Text('Worker approved successfully')),
-                                              );
-                                            }
-                                            setState(() => _processingWorkerId = null);
                                           },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.green,

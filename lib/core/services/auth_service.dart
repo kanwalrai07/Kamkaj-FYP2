@@ -84,6 +84,7 @@ class AuthService {
           'phone': phone ?? '',
           'role': role,
           'is_verified': false,
+          'is_approved': role == 'worker' ? false : true, // Workers need approval
           'rating': 5.0, // Initial rating
           'review_count': 0,
           'total_earnings': 0.0, // Initialize earnings
